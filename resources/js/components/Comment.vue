@@ -7,14 +7,16 @@
             <a href="#" class="hover:underline text-sm">{{ comment.name }}</a>
           </p>
           <p class="text-sm text-gray-500">
-            <a href="#" class="hover:underline text-sm">{{ comment.date }}</a>
+            <a href="#" class="hover:underline text-sm">{{
+              comment.created
+            }}</a>
           </p>
         </div>
       </div>
     </div>
     <div class="opacity-75 px-4 pb-5 sm:p-6 sm:pt-0">
       <p class="text-sm">
-        {{ comment.text }}
+        {{ comment.comment }}
       </p>
     </div>
 
@@ -72,14 +74,11 @@ export default {
 
   methods: {
     click() {
-      this.$root.$emit('onClick', this.saveLink);
+      this.$root.$emit("addComment", this.comment.id);
     },
   },
 
   computed: {
-    saveLink() {
-      return "url/" + this.comment.id;
-    },
     depthStyle() {
       switch (this.depth) {
         case 1:

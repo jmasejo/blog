@@ -1750,6 +1750,8 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: {
     comment: {
@@ -1767,13 +1769,10 @@ __webpack_require__.r(__webpack_exports__);
   },
   methods: {
     click: function click() {
-      this.$root.$emit('onClick', this.saveLink);
+      this.$root.$emit("addComment", this.comment.id);
     }
   },
   computed: {
-    saveLink: function saveLink() {
-      return "url/" + this.comment.id;
-    },
     depthStyle: function depthStyle() {
       switch (this.depth) {
         case 1:
@@ -1890,31 +1889,82 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
       modalState: false,
-      saveUrl: ""
+      id: null,
+      enteredName: "",
+      enteredComment: "",
+      errors: []
     };
   },
   mounted: function mounted() {
     var _this = this;
 
-    this.$root.$on("onClick", function (data) {
+    this.$root.$on("addComment", function (id) {
       _this.toggleModal();
 
-      _this.saveUrl = data;
+      _this.id = id;
     });
   },
   methods: {
+    clearError: function clearError() {
+      this.errors = [];
+    },
+    clearForm: function clearForm() {
+      this.enteredName = "";
+      this.enteredComment = "";
+    },
     toggleModal: function toggleModal() {
       this.modalState = !this.modalState;
     },
-    cancel: function cancel() {
+    onCancel: function onCancel() {
       this.modalState = false;
+      this.clearForm();
     },
-    save: function save() {
-      console.log("saved to" + this.saveUrl);
+    onSubmit: function onSubmit(e) {
+      console.log("saved to" + this.data);
+
+      if (this.enteredComment && this.enteredName) {
+        this.send();
+      }
+
+      this.errors = [];
+
+      if (!this.enteredComment) {
+        this.errors.push("Comment is required.");
+      }
+
+      if (!this.enteredName) {
+        this.errors.push("Name is required.");
+      }
+    },
+    send: function send() {
+      var _this2 = this;
+
+      console.log("send");
+      axios.post("/api/comment", {
+        comment: this.enteredComment,
+        name: this.enteredName,
+        id: this.id
+      }).then(function (response) {
+        _this2.$root.$emit("fetch");
+
+        _this2.toggleModal();
+
+        _this2.clearForm();
+      }, function (error) {
+        console.log(error);
+      });
     }
   },
   computed: {
@@ -2050,6 +2100,8 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
@@ -2061,33 +2113,29 @@ __webpack_require__.r(__webpack_exports__);
   data: function data() {
     return {
       saveLink: "",
-      comments: [{
-        id: 1,
-        text: "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Illo impedit sapiente recusandae iusto officiis dolor? Laborum quibusdam quam, quidem vel assumenda repellat inventore sint nesciunt, ullam asperiores magnam placeat eveniet. Aliquam voluptatibus assumenda distinctio veniam quam tempora modi aperiam nemo voluptate reprehenderit quidem, nisi vero est.",
-        name: "JM",
-        parent_id: null,
-        depth: 0,
-        date: "2008-11-11 13:23:44"
-      }, {
-        id: 2,
-        text: "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Illo impedit sapiente recusandae iusto officiis dolor? Laborum quibusdam quam, quidem vel assumenda repellat inventore sint nesciunt, ullam asperiores magnam placeat eveniet. Aliquam voluptatibus assumenda distinctio veniam quam tempora modi aperiam nemo voluptate reprehenderit quidem, nisi vero est.",
-        name: "JM",
-        parent_id: 1,
-        depth: 1,
-        date: "2008-11-11 13:23:44"
-      }, {
-        id: 3,
-        text: "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Illo impedit sapiente recusandae iusto officiis dolor? Laborum quibusdam quam, quidem vel assumenda repellat inventore sint nesciunt, ullam asperiores magnam placeat eveniet. Aliquam voluptatibus assumenda distinctio veniam quam tempora modi aperiam nemo voluptate reprehenderit quidem, nisi vero est.",
-        name: "JM",
-        parent_id: 2,
-        depth: 2,
-        date: "2008-11-11 13:23:44"
-      }]
+      comments: []
     };
   },
+  mounted: function mounted() {
+    var _this = this;
+
+    this.fetch();
+    this.$root.$on("fetch", function () {
+      _this.fetch();
+    });
+  },
   methods: {
+    fetch: function fetch() {
+      var _this2 = this;
+
+      axios.get("/api/comment").then(function (response) {
+        return _this2.comments = response.data.data;
+      })["catch"](function (error) {
+        console.log(error);
+      });
+    },
     click: function click() {
-      this.$root.$emit("onClick", "link main");
+      this.$root.$emit("addComment", null);
     }
   }
 });
@@ -37802,7 +37850,7 @@ var render = function() {
                   staticClass: "hover:underline text-sm",
                   attrs: { href: "#" }
                 },
-                [_vm._v(_vm._s(_vm.comment.date))]
+                [_vm._v(_vm._s(_vm.comment.created))]
               )
             ])
           ])
@@ -37811,7 +37859,7 @@ var render = function() {
       _vm._v(" "),
       _c("div", { staticClass: "opacity-75 px-4 pb-5 sm:p-6 sm:pt-0" }, [
         _c("p", { staticClass: "text-sm" }, [
-          _vm._v("\n      " + _vm._s(_vm.comment.text) + "\n    ")
+          _vm._v("\n      " + _vm._s(_vm.comment.comment) + "\n    ")
         ])
       ]),
       _vm._v(" "),
@@ -37939,15 +37987,132 @@ var render = function() {
           ),
           _vm._v(" "),
           _c(
-            "div",
+            "form",
             {
               class: [
                 "inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6",
                 _vm.ModalStyle
-              ]
+              ],
+              on: {
+                submit: function($event) {
+                  $event.preventDefault()
+                  return _vm.onSubmit($event)
+                }
+              }
             },
             [
-              _vm._m(0),
+              _c("div", { staticClass: "sm:col-span-6 px-2" }, [
+                _vm.errors.length
+                  ? _c("p", [
+                      _c(
+                        "b",
+                        {
+                          staticClass: "block text-sm font-medium text-red-700"
+                        },
+                        [_vm._v("Please correct the following error(s):")]
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "ul",
+                        _vm._l(_vm.errors, function(error) {
+                          return _c(
+                            "li",
+                            {
+                              key: error,
+                              staticClass: "block text-sm font-sm text-red-700"
+                            },
+                            [_vm._v(_vm._s(error))]
+                          )
+                        }),
+                        0
+                      )
+                    ])
+                  : _vm._e()
+              ]),
+              _vm._v(" "),
+              _c("div", { staticClass: "sm:col-span-6 px-2" }, [
+                _c(
+                  "label",
+                  {
+                    staticClass: "block text-sm font-medium text-gray-700",
+                    attrs: { for: "name" }
+                  },
+                  [_vm._v("Name")]
+                ),
+                _vm._v(" "),
+                _c("div", { staticClass: "mt-1" }, [
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.enteredName,
+                        expression: "enteredName"
+                      }
+                    ],
+                    staticClass:
+                      "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md",
+                    attrs: {
+                      type: "text",
+                      name: "name",
+                      id: "name",
+                      placeholder: "enter name"
+                    },
+                    domProps: { value: _vm.enteredName },
+                    on: {
+                      change: _vm.clearError,
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.enteredName = $event.target.value
+                      }
+                    }
+                  })
+                ])
+              ]),
+              _vm._v(" "),
+              _c("div", { staticClass: "sm:col-span-6 px-2" }, [
+                _c(
+                  "label",
+                  {
+                    staticClass: "block text-sm font-medium text-gray-700",
+                    attrs: { for: "about" }
+                  },
+                  [_vm._v("\n          Add Comment\n        ")]
+                ),
+                _vm._v(" "),
+                _c("div", { staticClass: "mt-1" }, [
+                  _c("textarea", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.enteredComment,
+                        expression: "enteredComment"
+                      }
+                    ],
+                    staticClass:
+                      "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md",
+                    attrs: {
+                      id: "about",
+                      name: "about",
+                      rows: "3",
+                      placeholder: "enter comment"
+                    },
+                    domProps: { value: _vm.enteredComment },
+                    on: {
+                      change: _vm.clearError,
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.enteredComment = $event.target.value
+                      }
+                    }
+                  })
+                ])
+              ]),
               _vm._v(" "),
               _c("div", { staticClass: "pt-5" }, [
                 _c("div", { staticClass: "flex justify-end" }, [
@@ -37957,7 +38122,7 @@ var render = function() {
                       staticClass:
                         "bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
                       attrs: { type: "button" },
-                      on: { click: _vm.cancel }
+                      on: { click: _vm.onCancel }
                     },
                     [_vm._v("\n            Cancel\n          ")]
                   ),
@@ -37967,8 +38132,7 @@ var render = function() {
                     {
                       staticClass:
                         "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-                      attrs: { type: "submit" },
-                      on: { click: _vm.save }
+                      attrs: { type: "submit" }
                     },
                     [_vm._v("\n            Save\n          ")]
                   )
@@ -37981,31 +38145,7 @@ var render = function() {
     ]
   )
 }
-var staticRenderFns = [
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "sm:col-span-6" }, [
-      _c(
-        "label",
-        {
-          staticClass: "block text-sm font-medium text-gray-700",
-          attrs: { for: "about" }
-        },
-        [_vm._v("\n          Add Comment\n        ")]
-      ),
-      _vm._v(" "),
-      _c("div", { staticClass: "mt-1" }, [
-        _c("textarea", {
-          staticClass:
-            "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md",
-          attrs: { id: "about", name: "about", rows: "3" }
-        })
-      ])
-    ])
-  }
-]
+var staticRenderFns = []
 render._withStripped = true
 
 
@@ -38146,13 +38286,13 @@ var staticRenderFns = [
         _c("div", { staticClass: "min-w-0 flex-1" }, [
           _c("p", { staticClass: "text-sm font-medium text-gray-900" }, [
             _c("a", { staticClass: "hover:underline", attrs: { href: "#" } }, [
-              _vm._v("Chelsea Hagon")
+              _vm._v("Evan You")
             ])
           ]),
           _vm._v(" "),
           _c("p", { staticClass: "text-sm text-gray-500" }, [
             _c("a", { staticClass: "hover:underline", attrs: { href: "#" } }, [
-              _vm._v("December 9 at 11:43 AM")
+              _vm._v("7 years ago")
             ])
           ])
         ]),
@@ -38169,8 +38309,9 @@ var staticRenderFns = [
     var _c = _vm._self._c || _h
     return _c("div", { staticClass: "opacity-75 px-4 pb-5 sm:p-6 sm:pt-0" }, [
       _c("p", [
+        _c("b", [_vm._v("Vue")]),
         _vm._v(
-          "\n        Lorem ipsum dolor sit, amet consectetur adipisicing elit. Illo impedit\n        sapiente recusandae iusto officiis dolor? Laborum quibusdam quam,\n        quidem vel assumenda repellat inventore sint nesciunt, ullam\n        asperiores magnam placeat eveniet. Aliquam voluptatibus assumenda\n        distinctio veniam quam tempora modi aperiam nemo voluptate\n        reprehenderit quidem, nisi vero est.\n      "
+          " (pronounced /vjuː/, like view) is a progressive framework for\n        building user interfaces. Unlike other monolithic frameworks, Vue is\n        designed from the ground up to be incrementally adoptable. The core\n        library is focused on the view layer only, and is easy to pick up and\n        integrate with other libraries or existing projects. On the other\n        hand, Vue is also perfectly capable of powering sophisticated\n        Single-Page Applications when used in combination with modern tooling\n        and supporting libraries.\n      "
         )
       ])
     ])

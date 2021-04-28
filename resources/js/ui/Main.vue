@@ -5,10 +5,10 @@
         <div class="flex space-x-3">
           <div class="min-w-0 flex-1">
             <p class="text-sm font-medium text-gray-900">
-              <a href="#" class="hover:underline">Chelsea Hagon</a>
+              <a href="#" class="hover:underline">Evan You</a>
             </p>
             <p class="text-sm text-gray-500">
-              <a href="#" class="hover:underline">December 9 at 11:43 AM</a>
+              <a href="#" class="hover:underline">7 years ago</a>
             </p>
           </div>
           <div class="flex-shrink-0 self-center flex">
@@ -18,12 +18,14 @@
       </div>
       <div class="opacity-75 px-4 pb-5 sm:p-6 sm:pt-0">
         <p>
-          Lorem ipsum dolor sit, amet consectetur adipisicing elit. Illo impedit
-          sapiente recusandae iusto officiis dolor? Laborum quibusdam quam,
-          quidem vel assumenda repellat inventore sint nesciunt, ullam
-          asperiores magnam placeat eveniet. Aliquam voluptatibus assumenda
-          distinctio veniam quam tempora modi aperiam nemo voluptate
-          reprehenderit quidem, nisi vero est.
+          <b>Vue</b> (pronounced /vjuː/, like view) is a progressive framework for
+          building user interfaces. Unlike other monolithic frameworks, Vue is
+          designed from the ground up to be incrementally adoptable. The core
+          library is focused on the view layer only, and is easy to pick up and
+          integrate with other libraries or existing projects. On the other
+          hand, Vue is also perfectly capable of powering sophisticated
+          Single-Page Applications when used in combination with modern tooling
+          and supporting libraries.
         </p>
       </div>
 
@@ -83,41 +85,29 @@ export default {
   data() {
     return {
       saveLink: "",
-      comments: [
-        {
-          id: 1,
-          text:
-            "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Illo impedit sapiente recusandae iusto officiis dolor? Laborum quibusdam quam, quidem vel assumenda repellat inventore sint nesciunt, ullam asperiores magnam placeat eveniet. Aliquam voluptatibus assumenda distinctio veniam quam tempora modi aperiam nemo voluptate reprehenderit quidem, nisi vero est.",
-          name: "JM",
-          parent_id: null,
-          depth: 0,
-          date: "2008-11-11 13:23:44",
-        },
-        {
-          id: 2,
-          text:
-            "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Illo impedit sapiente recusandae iusto officiis dolor? Laborum quibusdam quam, quidem vel assumenda repellat inventore sint nesciunt, ullam asperiores magnam placeat eveniet. Aliquam voluptatibus assumenda distinctio veniam quam tempora modi aperiam nemo voluptate reprehenderit quidem, nisi vero est.",
-          name: "JM",
-          parent_id: 1,
-          depth: 1,
-          date: "2008-11-11 13:23:44",
-        },
-        {
-          id: 3,
-          text:
-            "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Illo impedit sapiente recusandae iusto officiis dolor? Laborum quibusdam quam, quidem vel assumenda repellat inventore sint nesciunt, ullam asperiores magnam placeat eveniet. Aliquam voluptatibus assumenda distinctio veniam quam tempora modi aperiam nemo voluptate reprehenderit quidem, nisi vero est.",
-          name: "JM",
-          parent_id: 2,
-          depth: 2,
-          date: "2008-11-11 13:23:44",
-        },
-      ],
+      comments: [],
     };
   },
 
+  mounted() {
+    this.fetch();
+
+    this.$root.$on("fetch", () => {
+      this.fetch();
+    });
+  },
+
   methods: {
+    fetch() {
+      axios
+        .get("/api/comment")
+        .then((response) => (this.comments = response.data.data))
+        .catch(function (error) {
+          console.log(error);
+        });
+    },
     click() {
-      this.$root.$emit("onClick", "link main");
+      this.$root.$emit("addComment", null);
     },
   },
 };
